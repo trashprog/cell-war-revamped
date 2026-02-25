@@ -5,7 +5,7 @@ This is a update to my top-down shooter game I made 2 years ago, given how bevy 
 
 ## Developer log
 
-1. Migrate old code written in bevy version 0.10 to 0.18
+1. Migrate old code written in bevy version 0.10 to 0.16 ()
 
 2. Fix spawning issue where enemies are spawned in a hardcoded boundary, ensuring they spawn at the sides when window is enlarged.
 at
