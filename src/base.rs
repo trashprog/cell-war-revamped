@@ -92,7 +92,7 @@ pub fn despawn_base_buildings(mut commands: Commands, base_building_query : Quer
 
 
 pub fn spawn_base(mut commands: Commands, asset_server : Res<AssetServer>, window_query : Query<&Window, With<PrimaryWindow>>){
-    let window = window_query.get_single().unwrap();
+    let window = window_query.single().unwrap();
     commands.spawn((
         SpriteBundle{
             transform : Transform{

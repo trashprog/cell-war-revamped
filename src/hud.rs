@@ -11,22 +11,13 @@ impl Plugin for HudPlugin {
 
 
             // OnEnter Systems
-            .add_system(spawn_hud.in_schedule(OnEnter(AppState::Game)))
-
+            .add_systems(OnEnter(AppState::Game), spawn_hud)
 
             // Systems
-            .add_systems(
-                (
-                    update_parts,
-                    parts_gui
-                )
-                .in_set(OnUpdate(AppState::Game))
-                .in_set(OnUpdate(SimulationState::Running))
-            )
-
+            .add_systems(Update,(update_parts, parts_gui).run_if(in_state(AppState::Game).and(in_state(SimulationState::Running))))
 
             // OnExit Systems
-            .add_system(despawn_hud.in_schedule(OnExit(AppState::Game)));
+            .add_systems(OnExit(AppState::Game), despawn_hud);
     }
 }
 
@@ -49,7 +40,7 @@ pub fn spawn_hud(mut commands: Commands) {
 
 pub fn despawn_hud(mut commands: Commands, hud_query: Query<Entity, With<HUD>>) {
     for entity in hud_query.iter() {
-        commands.entity(entity).despawn_recursive();
+        commands.entity(entity).despawn();
     }
 }
 
@@ -67,7 +58,7 @@ pub fn build_hud(commands: &mut Commands) -> Entity {
             parent.spawn((
                 ImageBundle{
                     style: IMAGE_STYLE,
-                    background_color : Color::rgba(1.0, 1.0, 1.0, 0.0).into(),
+                    background_color : Color::srgb(1.0, 1.0, 1.0).into(),
                     ..default()
                 },
                 PartIcon{}

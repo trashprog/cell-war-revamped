@@ -1,15 +1,15 @@
 use bevy::{app::AppExit, prelude::*}; // 
 
-// mod repetitive_code;
+mod repetitive_code;
 // mod player;
 // mod wave;
 // mod bullet;
 // mod enemy;
 // mod base;
-// mod main_menu;
+mod main_menu;
 // mod turret;
-// mod part;
-// mod pause_menu;
+mod part;
+mod pause_menu;
 // mod game_over;
 // mod hud;
 
@@ -17,15 +17,18 @@ use bevy::{app::AppExit, prelude::*}; //
 // use bullet::BulletPlugin;
 // use enemy::EnemyPlugin;
 // use base::BasePlugin;
-// use main_menu::MainMenuPlugin;
+use main_menu::MainMenuPlugin;
 // use wave::WavePlugin;
 // use player::PlayerPlugin;
-// use pause_menu::PauseMenuPlugin;
+use pause_menu::PauseMenuPlugin;
 // use game_over::GameOverMenuPlugin;
 // use hud::HudPlugin;
 fn main() {
     App::new()
     .add_plugins(DefaultPlugins)
+
+    // Startup
+    .add_systems(Startup,spawn_camera)
 
     //Resources
     .init_resource::<FinalScore>()
@@ -45,25 +48,22 @@ fn main() {
     // .add_plugin(EnemyPlugin)
     // .add_plugin(TurretPlugin)
     // .add_plugin(WavePlugin)
-    // .add_plugin(BasePlugin)
+    // .add_plugins(BasePlugin)
     // .add_plugin(BulletPlugin)
-    // .add_plugin(MainMenuPlugin)
-    // .add_plugin(PauseMenuPlugin)
+    .add_plugins(MainMenuPlugin)
+    .add_plugins(PauseMenuPlugin)
     // .add_plugin(GameOverMenuPlugin)
-    // .add_plugin(HudPlugin)
+    // .add_plugins(HudPlugin)
 
     //Systems
-    // .add_system(toggle_simulation.run_if(in_state(AppState::Game)))
-    // .add_system(update_final_score)
     .add_systems(Update, (
         exit_game, 
         transition_to_game_state, 
-        transition_to_main_menu_state, 
-        toggle_simulation.run_if(in_state(AppState::Game))))
-    
-    // .add_system(handle_game_over)
-    
-    .add_systems(Startup,spawn_camera)
+        transition_to_main_menu_state,
+        update_final_score,
+        toggle_simulation.run_if(in_state(AppState::Game)),
+        handle_game_over.run_if(in_state(AppState::GameOver))
+    ))
 
     //On Exit Systems
     .add_systems(OnExit(AppState::Game), pause_simulation)
@@ -81,8 +81,8 @@ pub enum AppState{
 
 #[derive(States, Debug, Clone, Copy, Eq, PartialEq, Hash, Default)]
 pub enum SimulationState {
-    #[default]
     Running,
+    #[default] // settig default here makes sure that when the app starts, the simulation is paused, which is what we want since we start in the main menu
     Paused,
 }
 
@@ -124,7 +124,7 @@ pub fn exit_game(keyboard_input: Res<ButtonInput<KeyCode>>, mut app_exit_event_w
 
 pub fn spawn_camera(mut commands: Commands){ // window_query : Query<&Window, With<PrimaryWindow>>
     // let window = window_query.unwrap();
-    commands.spawn(Camera2d::default());
+    commands.spawn(Camera2d);
 }
 
 pub fn pause_simulation(mut simulation_state_next_state: ResMut<NextState<SimulationState>>) {
