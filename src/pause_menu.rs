@@ -69,28 +69,10 @@ pub fn build_pause_menu(commands: &mut Commands, asset_server: &Res<AssetServer>
                         text_components.2,
                     )
                     );
-                    // parent.spawn(TextBundle {
-                    //     text: Text {
-                    //         sections: vec![TextSection::new(
-                    //             "Pause Menu",
-                    //             get_title_text_style(&asset_server),
-                    //         )],
-                    //         alignment: TextAlignment::Center,
-                    //         ..default()
-                    //     },
-                    //     ..default()
-                    // });
-                    // Resume Button
                     parent
                         .spawn((
                             build_button(),
                             ResumeButton{}
-                            // ButtonBundle {
-                            //     style: BUTTON_STYLE,
-                            //     background_color: NORMAL_BUTTON_COLOR.into(),
-                            //     ..default()
-                            // },
-                            // ResumeButton {},
                         ))
                         .with_children(|parent| {
                             let text_components = get_button_text_components(asset_server, "Resume", 32.0);
@@ -101,30 +83,12 @@ pub fn build_pause_menu(commands: &mut Commands, asset_server: &Res<AssetServer>
                                 text_components.2,
                                 )
                             );
-                            // parent.spawn(TextBundle {
-                            //     style: Style { ..default() },
-                            //     text: Text {
-                            //         sections: vec![TextSection::new(
-                            //             "Resume",
-                            //             get_button_text_style(&asset_server),
-                            //         )],
-                            //         alignment: TextAlignment::Center,
-                            //         ..default()
-                            //     },
-                            //     ..default()
-                            // });
                         });
                     // Main Menu Button
                     parent
                         .spawn((
                             build_button(),
                             MainMenuButton{}
-                            // ButtonBundle {
-                            //     style: BUTTON_STYLE,
-                            //     background_color: NORMAL_BUTTON_COLOR.into(),
-                            //     ..default()
-                            // },
-                            // MainMenuButton {},
                         ))
                         .with_children(|parent| {
 
@@ -136,30 +100,12 @@ pub fn build_pause_menu(commands: &mut Commands, asset_server: &Res<AssetServer>
                                 text_components.2,
                                 )
                             );
-                            // parent.spawn(TextBundle {
-                            //     style: Style { ..default() },
-                            //     text: Text {
-                            //         sections: vec![TextSection::new(
-                            //             "Main Menu",
-                            //             get_button_text_style(&asset_server),
-                            //         )],
-                            //         alignment: TextAlignment::Center,
-                            //         ..default()
-                            //     },
-                            //     ..default()
-                            // });
                         });
                     // Quit Button
                     parent
                         .spawn((
                             build_button(),
                             QuitButton{}
-                            // ButtonBundle {
-                            //     style: BUTTON_STYLE,
-                            //     background_color: NORMAL_BUTTON_COLOR.into(),
-                            //     ..default()
-                            // },
-                            // QuitButton {},
                         ))
                         .with_children(|parent| {
                             let text_components = get_button_text_components(asset_server, "Quit", 32.0);
@@ -170,18 +116,6 @@ pub fn build_pause_menu(commands: &mut Commands, asset_server: &Res<AssetServer>
                                 text_components.2,
                                 )
                             );
-                            // parent.spawn(TextBundle {
-                            //     style: Style { ..default() },
-                            //     text: Text {
-                            //         sections: vec![TextSection::new(
-                            //             "Quit",
-                            //             get_button_text_style(&asset_server),
-                            //         )],
-                            //         alignment: TextAlignment::Center,
-                            //         ..default()
-                            //     },
-                            //     ..default()
-                            // });
                         });
                 });
         })

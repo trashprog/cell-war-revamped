@@ -10,10 +10,9 @@ pub struct BulletPlugin;
 impl Plugin for BulletPlugin{
     fn build(&self, app: &mut App) {
         app
-        .add_system(update_bullets)
 
-        
-        .add_system(despawn_bullets.in_schedule(OnExit(AppState::Game)));
+        .add_systems(Update, update_bullets.run_if(in_state(AppState::Game))) //only run if in the game state
+        .add_systems(OnExit(AppState::Game), despawn_bullets);
     
     }
 }
@@ -37,12 +36,19 @@ pub struct Bullet{
     
 }
 
+#[derive(Bundle)]
+pub struct BulletBundle {
+    pub(crate) bullet: Bullet,
+    pub(crate) sprite: Sprite,
+    pub(crate) transform: Transform,
+}
+
 pub fn update_bullets(mut commands: Commands, mut bullet_query: Query<(&mut Transform, &mut Bullet,Entity), (With<Bullet>, Without<Base>)>, time: Res<Time>, window_query : Query<&Window, With<PrimaryWindow>>, base_query: Query<&Base, (With<Base>, Without<Bullet>)>){
-    let window = window_query.get_single().unwrap();
+    let window = window_query.single().unwrap();
     for (mut transform, mut bullet, entity) in bullet_query.iter_mut(){
         
         let direction = Vec3::new(bullet.direction.x, bullet.direction.y, 0.0);
-        transform.translation += direction*bullet.speed*time.delta_seconds();
+        transform.translation += direction*bullet.speed*time.delta_secs();
         transform.rotation = Quat::from_rotation_z(bullet.direction.y.atan2(bullet.direction.x) - PI/2.0);
         if bullet.instant.elapsed().as_secs() > BULLET_LIFETIME as u64{
             commands.entity(entity).despawn();

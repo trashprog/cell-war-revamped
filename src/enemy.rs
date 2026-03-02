@@ -1,17 +1,17 @@
 use std::{ f32::consts::PI, time::{Duration, Instant}};
+use bevy::{prelude::*};
 use rand::prelude::*;
-use bevy::{prelude::*, sprite::collide_aabb::collide};
-
 
 use crate::base::*;
 use crate::player::*;
 use crate::bullet::*;
+use crate::repetitive_code::*;
 use super::{AppState, SimulationState};
 
 pub struct EnemyPlugin;
 
 impl Plugin for EnemyPlugin{
-    fn build(&self, app: &mut App, schedule: &mut Schedule) {
+    fn build(&self, app: &mut App) {
         app
 
         //Resources
@@ -20,24 +20,17 @@ impl Plugin for EnemyPlugin{
 
         
         //While in game appstate
-        .add_systems(
-            (
-                enemy_spawn_timer_ticker,
-                enemy_movement,
-                enemy_ability_timer,
-                deacon_behaviour
-            )
-            .in_set(OnUpdate(AppState::Game))
-            .in_set(OnUpdate(SimulationState::Running))
+        .add_systems(Update,(enemy_spawn_timer_ticker,enemy_movement,enemy_ability_timer,deacon_behaviour)
+            .run_if(in_state(AppState::Game))
+            .run_if(in_state(SimulationState::Running))
         )
 
         //On exit Game Appstate
-        .add_system(despawn_enemies.in_schedule(OnExit(AppState::Game)))
-        .add_system(despawn_deacons.in_schedule(OnExit(AppState::Game)));
+        .add_systems(OnExit(AppState::Game), despawn_enemies)
+        .add_systems(OnExit(AppState::Game), despawn_deacons);
         
     }
 }
-
 
 
 pub const ENEMY_SPAWN_COOLDOWN : f32 = 3.0;
@@ -85,6 +78,19 @@ pub struct Enemy{
     pub size : Vec2
 }
 
+#[derive(Bundle)]
+pub struct EnemyBundle{
+    pub sprite: Sprite,
+    pub transform: Transform,
+    pub enemy: Enemy
+}
+
+#[derive(Bundle)]
+pub struct DeaconBundle{
+    pub(crate) sprite: Sprite,
+    pub(crate) transform: Transform,
+    pub(crate) deacon: Deacon
+}
 
 #[derive(Resource)]
 pub struct EnemySpawnCooldownTimer{
@@ -129,16 +135,16 @@ pub fn enemy_ability_timer(mut enemy_ability_timer : ResMut<EnemyAbilityTimer>, 
 pub fn enemy_movement( mut enemy_query: Query<(&mut Transform, &mut Enemy), (With<Enemy>, Without<Base>, Without<Player>)>, time : Res<Time>, base_query: Query<&Transform, (With<Base>, Without<Player>, Without<Enemy>)>, player_query: Query<&Transform, (With<Player>, Without<Enemy>, Without<Base>)>, enemy_ability_timer : Res<EnemyAbilityTimer>, mut commands: Commands, asset_server : Res<AssetServer>){
     
     for (mut t, enemy) in enemy_query.iter_mut(){
-        let base_translation = base_query.get_single().unwrap().translation;
+        let base_translation = base_query.single().unwrap().translation;
         match enemy.variant{
             EnemyType::Pawn => {
-                let direction = (base_translation - t.translation).normalize() + Vec3::new(rand::thread_rng().gen_range(-0.4..=0.4),rand::thread_rng().gen_range(-0.4..=0.4),0.0, );
-                t.translation += direction* enemy.speed *time.delta_seconds();
+                let direction = (base_translation - t.translation).normalize() + Vec3::new(rand::rng().random_range(0.4..=0.4),rand::rng().random_range(0.4..=0.4),0.0, );
+                t.translation += direction* enemy.speed *time.delta_secs();
                 t.rotation = Quat::from_rotation_z(direction.y.atan2(direction.x) - PI/2.0);
             },
             EnemyType::Stinger => {
-                let direction = (base_translation - t.translation).normalize() + Vec3::new(rand::thread_rng().gen_range(-0.5..=0.5),rand::thread_rng().gen_range(-0.5..=0.5),0.0, );
-                t.translation += direction* enemy.speed *time.delta_seconds();
+                let direction = (base_translation - t.translation).normalize() + Vec3::new(rand::rng().random_range(-0.5..=0.5),rand::rng().random_range(-0.5..=0.5),0.0, );
+                t.translation += direction* enemy.speed *time.delta_secs();
                 t.rotation = Quat::from_rotation_z(direction.y.atan2(direction.x) - PI/2.0);
             },
             EnemyType::Splitter{split_count : ct, instant : inst, direction : mut dir} => {
@@ -152,73 +158,68 @@ pub fn enemy_movement( mut enemy_query: Query<(&mut Transform, &mut Enemy), (Wit
                         }
                     } 
                 }
-                t.translation += dir * enemy.speed *time.delta_seconds();
+                t.translation += dir * enemy.speed *time.delta_secs();
                 t.rotation *= Quat::from_rotation_z(PI/135.0);
             },
             EnemyType::Rogue => {
-                if let Ok(player_transform) = player_query.get_single(){
+                if let Ok(player_transform) = player_query.single(){
                     let direction = (player_transform.translation - t.translation).normalize();
-                    t.translation += direction* enemy.speed *time.delta_seconds();
+                    t.translation += direction* enemy.speed *time.delta_secs();
                     t.rotation *= Quat::from_rotation_z(-PI/90.0);
     
                 }
                 else{
                     let direction = (base_translation - t.translation).normalize();
-                    t.translation += direction* enemy.speed *time.delta_seconds();
+                    t.translation += direction* enemy.speed *time.delta_secs();
                     t.rotation *= Quat::from_rotation_z(PI/90.0);
                 }     
             },
             EnemyType::Bishop => {
                 if enemy_ability_timer.timer.finished() {
                     for _ in 0..2{
-                        commands.spawn((
-                            SpriteBundle{
-                                transform : Transform{
-                                    translation : Vec3::new(t.translation.x, t.translation.y, 0.0),
-                                    scale : Vec3::splat(0.2),
-                                    ..default()
-                                },
-                                texture : asset_server.load("Sprites/deacon.png"),
+                        commands.spawn(
+                        DeaconBundle{
+                            sprite: Sprite{image: asset_server.load("Sprites/deacon.png"), ..default()},
+                            transform: Transform{
+                                translation : Vec3::new(t.translation.x, t.translation.y, 0.0),
+                                scale : Vec3::splat(0.2),
                                 ..default()
                             },
-                            //Enemy{health: 1, variant : EnemyType::Deacon(DeaconGestation{direction : Vec3::new(rand::thread_rng().gen_range(-1.0..1.0), rand::thread_rng().gen_range(-1.0..1.0), 0.0).normalize(), spawn_time : Instant::now()}), speed : 20.0, size : Vec2::new(10.0, 10.0)}
-                            Deacon{speed: 20.0, size : Vec2::new(10.0, 10.0), direction : Vec3::new(rand::thread_rng().gen_range(-1.0..1.0), rand::thread_rng().gen_range(-1.0..1.0), 0.0), instant : Instant::now()}
-                        ));
+                            deacon: Deacon{speed: 20.0, size : Vec2::new(10.0, 10.0), direction : Vec3::new(rand::rng().random_range(-1.0..1.0), rand::rng().random_range(-1.0..1.0), 0.0), instant : Instant::now()}
+                        });
                     }
                 }
                 let direction = (base_translation - t.translation).normalize();
-                t.translation += direction* enemy.speed *time.delta_seconds();
+                t.translation += direction* enemy.speed *time.delta_secs();
                 t.rotation *= Quat::from_rotation_z(-PI/90.0);
             },
             EnemyType::Propagator => {
                 if enemy_ability_timer.timer.finished(){
                     for positon in ENEMY_POSITIONS.iter(){
-                        commands.spawn((
-                            SpriteBundle{
-                                transform : Transform{
-                                    translation : Vec3::new(t.translation.x, t.translation.y, 0.0),
-                                    scale : Vec3::splat(0.2),
-                                    ..default()
-                                },
-                                texture : asset_server.load("Sprites/neonate.png"),
-                                ..default()
-                            },
-                            Enemy{health: 50, variant : EnemyType::Neonate(NeonateGestation{direction : Vec3::new(positon.0, positon.1, 0.0).normalize(), spawn_time : Instant::now()}), speed : 20.0, size : Vec2::new(10.0, 10.0)}
-                        ));
+                        commands.spawn(
+                        EnemyBundle{
+                                sprite: Sprite{image: asset_server.load("Sprites/neonate.png"), ..default()},
+                                 transform: Transform{
+                                     translation : Vec3::new(t.translation.x, t.translation.y, 0.0),
+                                     scale : Vec3::splat(0.2),
+                                     ..default()
+                                 },
+                                 enemy: Enemy{health: 50, variant : EnemyType::Neonate(NeonateGestation{direction : Vec3::new(positon.0, positon.1, 0.0).normalize(), spawn_time : Instant::now()}), speed : 20.0, size : Vec2::new(10.0, 10.0)}
+                                });
                     } 
                 }else{
                 let direction = (base_translation - t.translation).normalize();
-                t.translation += direction* enemy.speed *time.delta_seconds();
+                t.translation += direction* enemy.speed *time.delta_secs();
                 t.rotation *= Quat::from_rotation_z(-PI/180.0);
                 }
             },
             EnemyType::Neonate(mut inner_struct) => {
                 if inner_struct.time_since_spawn().as_secs() > 1{
-                    let direction = (base_translation - t.translation).normalize() + Vec3::new(rand::thread_rng().gen_range(-0.5..=0.5),rand::thread_rng().gen_range(-0.5..=0.5),0.0, );
+                    let direction = (base_translation - t.translation).normalize() + Vec3::new(rand::rng().random_range(-0.5..=0.5),rand::rng().random_range(-0.5..=0.5),0.0);
                     inner_struct.direction = direction;
                 }
                 let direction = Vec3::new(inner_struct.direction.x, inner_struct.direction.y, 0.0);
-                t.translation += direction* enemy.speed *time.delta_seconds();
+                t.translation += direction* enemy.speed *time.delta_secs();
                 t.rotation = Quat::from_rotation_z(direction.y.atan2(direction.x) - PI/2.0);
                 
             }
@@ -234,7 +235,7 @@ pub fn despawn_deacons(mut commands : Commands, deacon_query : Query<Entity, Wit
 
 }
 
-pub fn deacon_behaviour(mut commands: Commands, mut deacon_query : Query<(Entity, &mut Transform, &mut Deacon), (With<Deacon>, Without<Enemy>, Without<Bullet>)>, mut enemy_query: Query<(&Transform, &mut Enemy), (With<Enemy>, Without<Deacon>, Without<Bullet>)>, time : Res<Time>, bullet_query: Query<(Entity, &Transform, &Bullet), (With<Bullet>, Without<Enemy>, Without<Deacon>)>, asset_server : Res<AssetServer>, audio : Res<Audio>){
+pub fn deacon_behaviour(mut commands: Commands, mut deacon_query : Query<(Entity, &mut Transform, &mut Deacon), (With<Deacon>, Without<Enemy>, Without<Bullet>)>, mut enemy_query: Query<(&Transform, &mut Enemy), (With<Enemy>, Without<Deacon>, Without<Bullet>)>, time : Res<Time>, bullet_query: Query<(Entity, &Transform, &Bullet), (With<Bullet>, Without<Enemy>, Without<Deacon>)>, asset_server : Res<AssetServer>){
     for (deacon_entity, mut deacon_transform, mut deacon) in deacon_query.iter_mut(){
         if deacon.instant.elapsed().as_secs() > 1{
             deacon.speed = 0.0;
@@ -246,7 +247,7 @@ pub fn deacon_behaviour(mut commands: Commands, mut deacon_query : Query<(Entity
                         deacon.direction = Vec3::new(enemy_transform.translation.x - deacon_transform.translation.x, enemy_transform.translation.y - deacon_transform.translation.y, 0.0);
                     if collide(enemy_transform.translation, enemy.size, deacon_transform.translation, deacon.size).is_some(){
                         let sound_effect = asset_server.load("Audio/doorClose_000.ogg");
-                        audio.play(sound_effect);
+                        commands.spawn(AudioPlayer::new(sound_effect));
                         commands.entity(deacon_entity).despawn();
                         enemy.health += 10;
                         enemy.speed += 1.0;
@@ -256,12 +257,12 @@ pub fn deacon_behaviour(mut commands: Commands, mut deacon_query : Query<(Entity
             }
             
         }
-        deacon_transform.translation += deacon.direction * deacon.speed * time.delta_seconds();
+        deacon_transform.translation += deacon.direction * deacon.speed * time.delta_secs();
         deacon_transform.rotation *= Quat::from_rotation_z(-PI/180.0);
         for (bullet_entity, bullet_transform, bullet) in bullet_query.iter(){
             if collide(bullet_transform.translation, bullet.size, deacon_transform.translation, deacon.size).is_some(){
                 let sound_effect = asset_server.load("Audio/doorOpen_001.ogg");
-                audio.play(sound_effect);
+                commands.spawn(AudioPlayer::new(sound_effect));
                 commands.entity(bullet_entity).despawn();
                 commands.entity(deacon_entity).despawn();
             }

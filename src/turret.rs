@@ -11,16 +11,12 @@ impl Plugin for TurretPlugin{
         app
         .init_resource::<TurretCooldownTimer>()
 
-        .add_systems(
-            (
-               turret_timer_ticker,
-                turret_movement
-            )
-            .in_set(OnUpdate(AppState::Game))
-            .in_set(OnUpdate(SimulationState::Running))
+        .add_systems(Update, (turret_timer_ticker, turret_movement)
+            .run_if(in_state(AppState::Game))
+            .run_if(in_state(SimulationState::Running))
         )
         
-        .add_system(despawn_turret.in_schedule(OnExit(AppState::Game)));
+        .add_systems(OnExit(AppState::Game), despawn_turret);
     }
 }
 
@@ -59,7 +55,7 @@ pub fn turret_timer_ticker(mut turret_timer: ResMut<TurretCooldownTimer>, time :
 
 }
 
-pub fn turret_movement(mut commands: Commands, enemy_query: Query<(Entity, &Transform), (With<Enemy>, Without<Turret>)>, mut turret_query : Query<(&mut Transform, &mut Turret), (With<Turret>, Without<Enemy>)>, asset_server : Res<AssetServer>, turret_timer: Res<TurretCooldownTimer>, audio : Res<Audio>){
+pub fn turret_movement(mut commands: Commands, enemy_query: Query<(Entity, &Transform), (With<Enemy>, Without<Turret>)>, mut turret_query : Query<(&mut Transform, &mut Turret), (With<Turret>, Without<Enemy>)>, asset_server : Res<AssetServer>, turret_timer: Res<TurretCooldownTimer>){
     for (mut turret_transform, mut turret) in turret_query.iter_mut(){
         let mut fired = false;
         for (enemy_entity, enemy_transform) in enemy_query.iter(){
@@ -69,20 +65,17 @@ pub fn turret_movement(mut commands: Commands, enemy_query: Query<(Entity, &Tran
                 }
                 if turret.target.is_some() {
                     if turret_timer.timer.just_finished() && !fired{
-                        commands.spawn((SpriteBundle{
-                            transform : Transform{
+                        commands.spawn(
+                        BulletBundle{
+                            bullet: Bullet{speed : BULLET_SPEED, size : Vec2::new(10.0, 10.0), direction : Vec2::new(enemy_transform.translation.x - turret_transform.translation.x, enemy_transform.translation.y - turret_transform.translation.y).normalize(), instant : Instant::now(), damage : 50},
+                            sprite: Sprite{image: asset_server.load("Sprites/spaceMissiles_027.png"), ..default()},
+                            transform: Transform{
                                 translation : Vec3::new(turret_transform.translation.x, turret_transform.translation.y, 0.0),
                                 scale : Vec3::splat(0.2),
                                 ..default()
-                            },
-                            texture : asset_server.load("Sprites/spaceMissiles_027.png"),
-                            ..default()
-                        },
-                        Bullet{speed : BULLET_SPEED, size : Vec2::new(10.0, 10.0), direction : Vec2::new(enemy_transform.translation.x - turret_transform.translation.x, enemy_transform.translation.y - turret_transform.translation.y).normalize(), instant : Instant::now(), damage : 50}
-                        
-                        ));
+                            }});
                         let sound_effect = asset_server.load("Audio/impactGlass_heavy_001.ogg");
-                        audio.play(sound_effect);
+                        commands.spawn(AudioPlayer::new(sound_effect));
                         turret_transform.rotation = Quat::from_rotation_z((enemy_transform.translation.y - turret_transform.translation.y).atan2(enemy_transform.translation.x - turret_transform.translation.x) - PI/2.0);
                         fired = true;
                     }

@@ -1,25 +1,25 @@
 use bevy::{app::AppExit, prelude::*}; // 
 
 mod repetitive_code;
-// mod player;
+mod player;
 // mod wave;
-// mod bullet;
-// mod enemy;
-// mod base;
+mod bullet;
+mod enemy;
+mod base;
 mod main_menu;
-// mod turret;
+mod turret;
 mod part;
 mod pause_menu;
 // mod game_over;
 // mod hud;
 
-// use turret::TurretPlugin;
-// use bullet::BulletPlugin;
-// use enemy::EnemyPlugin;
-// use base::BasePlugin;
+use turret::TurretPlugin;
+use bullet::BulletPlugin;
+use enemy::EnemyPlugin;
+use base::BasePlugin;
 use main_menu::MainMenuPlugin;
 // use wave::WavePlugin;
-// use player::PlayerPlugin;
+use player::PlayerPlugin;
 use pause_menu::PauseMenuPlugin;
 // use game_over::GameOverMenuPlugin;
 // use hud::HudPlugin;
@@ -44,12 +44,12 @@ fn main() {
      
 
     //Plugins
-    // .add_plugin(PlayerPlugin)
-    // .add_plugin(EnemyPlugin)
-    // .add_plugin(TurretPlugin)
+    .add_plugins(PlayerPlugin)
+    .add_plugins(EnemyPlugin)
+    .add_plugins(TurretPlugin)
     // .add_plugin(WavePlugin)
-    // .add_plugins(BasePlugin)
-    // .add_plugin(BulletPlugin)
+    .add_plugins(BasePlugin)
+    .add_plugins(BulletPlugin)
     .add_plugins(MainMenuPlugin)
     .add_plugins(PauseMenuPlugin)
     // .add_plugin(GameOverMenuPlugin)

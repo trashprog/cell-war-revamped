@@ -9,6 +9,13 @@ pub struct Part{
     pub instant : Instant
 }
 
+#[derive(Bundle)]
+pub struct PartBundle {
+    pub sprite: Sprite,
+    pub transform: Transform,
+    pub part: Part,
+}
+
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum PartTier {

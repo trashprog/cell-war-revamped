@@ -1,4 +1,7 @@
-use bevy::{prelude::*};
+use bevy::{math::bounding::{BoundingCircle, IntersectsVolume}, prelude::*};
+use rand::prelude::*;
+
+// i did not make a create bundle function becuase the lines wont change since the params passed in is long*
 
 pub fn get_enemy_transform_0_2(enemy_translation : Vec3) -> Transform{
     Transform{
@@ -8,6 +11,24 @@ pub fn get_enemy_transform_0_2(enemy_translation : Vec3) -> Transform{
     }
 }
 
+pub fn generate_random_number() -> f32{
+    let mut rng = rand::rng();
+    let random_number: f32 = rng.random();
+    random_number
+}
+
+pub fn collide(pos_a: Vec3, size_a: Vec2, pos_b: Vec3, size_b: Vec2,) -> Option<()> {
+    let a_radius = size_a.length_recip()*0.5;
+    let b_radius = size_b.length_recip()*0.5;
+    let bounding_circle_a = BoundingCircle::new(pos_a.truncate(), a_radius);
+    let bounding_circle_b = BoundingCircle::new(pos_b.truncate(), b_radius);
+
+    if bounding_circle_a.intersects(&bounding_circle_b) {
+        Some(())
+    } else {
+        None
+    }
+}
 
 
 //ui styles
@@ -183,6 +204,5 @@ pub fn get_title_style() -> Node {
     node.height = Val::Px(120.0);
     node
 }
-
 
 
