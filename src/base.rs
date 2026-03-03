@@ -82,26 +82,28 @@ pub fn despawn_base_buildings(mut commands: Commands, base_building_query : Quer
 }
 
 
-pub fn spawn_base(mut commands: Commands, asset_server : Res<AssetServer>, window_query : Query<&Window, With<PrimaryWindow>>){
-    let window = window_query.single().unwrap();
-    commands.spawn(
+pub fn spawn_base(mut commands: Commands, asset_server : Res<AssetServer>){
+    commands.spawn((
     BaseBundle{
         sprite: Sprite{image:asset_server.load("Sprites/spaceBuilding_005.png"), ..default()},
         transform: Transform{
-            translation : Vec3::new(window.width()/2.0, window.height()/2.0, 0.0),
+            translation : Transform::from_translation(Vec3::ZERO).translation,
             scale :Vec3::splat(0.3),
             ..default()
         },
         base_type: BaseBuilding{}
-        });
+        },
+        Base{health : 500, level : 1, parts : Vec::new(), parts_required : Vec::new(), max_parts : 3, leveled_up : false, size : Vec2::new(50.0, 50.0), instant : Instant::now()}
+
+    )
+    
+    );
 }
-
-
 
 
 pub fn base_leveling(mut base_query: Query<&mut Base, (With<Base>, Without<Player>)>){
     for mut base in base_query.iter_mut(){
-        if base.parts_required.is_empty() || base.parts.is_empty(){
+        if base.parts_required.is_empty(){
             match base.level{
                 1 => {
                     for _ in 0..base.max_parts{
@@ -229,27 +231,25 @@ pub fn base_leveling(mut base_query: Query<&mut Base, (With<Base>, Without<Playe
         }
     }
     for mut base in base_query.iter_mut(){
-        for (part, part_tier) in base.parts.iter().zip(base.parts_required.iter()){
-            if part.part_tier != *part_tier{
+        if base.parts.len() == base.parts_required.len() && !base.parts_required.is_empty(){
+            let all_match = base.parts.iter()
+                .zip(base.parts_required.iter())
+                .all(|(part, tier)| part.part_tier == *tier);
+            
+            if all_match {
                 base.parts.clear();
                 base.parts_required.clear();
-                break;
-            }
-            else{
-                if base.parts.len() == base.parts_required.len(){
-                base.parts.clear();
-                base.parts_required.clear();
-                if base.max_parts < 8{
+                if base.max_parts < 8 {
                     base.max_parts += 1;
                 }
                 base.level += 1;
                 base.leveled_up = true;
-                break;
-                }
+            } else {
+                // Only clear collected parts, not the requirements
+                base.parts.clear();
             }
         }
     }
-
 }
 
 pub fn base_levels(mut commands: Commands, mut base_query: Query<(&Transform, &mut Base), (With<Base>, Without<Player>)>, mut player_query: Query<&mut Player, (With<Player>, Without<Base>)>, mut blaster_timer: ResMut<BlasterCooldownTimer>, asset_server : Res<AssetServer>){
@@ -396,6 +396,7 @@ pub fn cheat_leveling(mut base_query: Query<&mut Base, With<Base>>, keyboard_inp
             base.level += 1;
             base.leveled_up = true;
             println!("{}", base.level);
+            println!("{}", base.parts_required.len());
         }
     }
 }

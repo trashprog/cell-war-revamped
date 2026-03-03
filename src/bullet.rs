@@ -17,11 +17,6 @@ impl Plugin for BulletPlugin{
     }
 }
 
-
-
-
-
-
 pub const BULLET_LIFETIME : f32 = 1.5;
 pub const BULLET_SPEED: f32= 250.0;
 pub const BULLET_SIZE : f32 = 16.0;
@@ -38,9 +33,9 @@ pub struct Bullet{
 
 #[derive(Bundle)]
 pub struct BulletBundle {
-    pub(crate) bullet: Bullet,
-    pub(crate) sprite: Sprite,
-    pub(crate) transform: Transform,
+    pub bullet: Bullet,
+    pub sprite: Sprite,
+    pub transform: Transform,
 }
 
 pub fn update_bullets(mut commands: Commands, mut bullet_query: Query<(&mut Transform, &mut Bullet,Entity), (With<Bullet>, Without<Base>)>, time: Res<Time>, window_query : Query<&Window, With<PrimaryWindow>>, base_query: Query<&Base, (With<Base>, Without<Bullet>)>){
@@ -55,15 +50,20 @@ pub fn update_bullets(mut commands: Commands, mut bullet_query: Query<(&mut Tran
             
         }
         let half_bullet_size = BULLET_SIZE/2.0;
-        let x_lim = half_bullet_size;
-        let x_max = window.width() - half_bullet_size;
-        let y_lim = half_bullet_size;
-        let y_max = window.height() - half_bullet_size;
+
+        let half_width = window.width() / 2.0;
+        let half_height = window.height() / 2.0;
+
+        let x_min = -half_width + half_bullet_size;
+        let x_max =  half_width - half_bullet_size;
+
+        let y_min = -half_height + half_bullet_size;
+        let y_max =  half_height - half_bullet_size;
 
         let translation = transform.translation;
-        if translation.x < x_lim{commands.entity(entity).despawn();}
+        if translation.x < x_min{commands.entity(entity).despawn();}
         else if translation.x > x_max {commands.entity(entity).despawn();}
-        else if translation.y < y_lim {commands.entity(entity).despawn();}
+        else if translation.y < y_min {commands.entity(entity).despawn();}
         else if translation.y > y_max {commands.entity(entity).despawn();}
         for base in base_query.iter(){
             match  base.level {

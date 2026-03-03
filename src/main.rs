@@ -2,7 +2,7 @@ use bevy::{app::AppExit, prelude::*}; //
 
 mod repetitive_code;
 mod player;
-// mod wave;
+mod wave;
 mod bullet;
 mod enemy;
 mod base;
@@ -10,19 +10,19 @@ mod main_menu;
 mod turret;
 mod part;
 mod pause_menu;
-// mod game_over;
-// mod hud;
+mod game_over;
+mod hud;
 
 use turret::TurretPlugin;
 use bullet::BulletPlugin;
 use enemy::EnemyPlugin;
 use base::BasePlugin;
 use main_menu::MainMenuPlugin;
-// use wave::WavePlugin;
+use wave::WavePlugin;
 use player::PlayerPlugin;
 use pause_menu::PauseMenuPlugin;
-// use game_over::GameOverMenuPlugin;
-// use hud::HudPlugin;
+use game_over::GameOverMenuPlugin;
+use hud::HudPlugin;
 fn main() {
     App::new()
     .add_plugins(DefaultPlugins)
@@ -47,13 +47,13 @@ fn main() {
     .add_plugins(PlayerPlugin)
     .add_plugins(EnemyPlugin)
     .add_plugins(TurretPlugin)
-    // .add_plugin(WavePlugin)
+    .add_plugins(WavePlugin)
     .add_plugins(BasePlugin)
     .add_plugins(BulletPlugin)
     .add_plugins(MainMenuPlugin)
     .add_plugins(PauseMenuPlugin)
-    // .add_plugin(GameOverMenuPlugin)
-    // .add_plugins(HudPlugin)
+    .add_plugins(GameOverMenuPlugin)
+    .add_plugins(HudPlugin)
 
     //Systems
     .add_systems(Update, (
@@ -106,6 +106,12 @@ impl Default for FinalScore {
     }
 }
 
+#[derive(Bundle)]
+pub struct Camera2dBundle{
+    pub camera: Camera2d,
+    pub transform: Transform
+}
+
 
 pub fn update_final_score(mut game_over_event_reader : EventReader<GameOver>, mut final_scores : ResMut<FinalScore>){
     for event in game_over_event_reader.read(){
@@ -122,9 +128,12 @@ pub fn exit_game(keyboard_input: Res<ButtonInput<KeyCode>>, mut app_exit_event_w
 
 }
 
-pub fn spawn_camera(mut commands: Commands){ // window_query : Query<&Window, With<PrimaryWindow>>
-    // let window = window_query.unwrap();
-    commands.spawn(Camera2d);
+pub fn spawn_camera(mut commands: Commands){ //window_query : Query<&Window, With<PrimaryWindow>>){
+    // let window = window_query.single().unwrap();
+    commands.spawn(Camera2dBundle{
+        camera: Camera2d,
+        transform : Transform::from_xyz(0.0, 0.0, 0.0)
+    });
 }
 
 pub fn pause_simulation(mut simulation_state_next_state: ResMut<NextState<SimulationState>>) {

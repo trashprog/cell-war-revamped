@@ -14,7 +14,9 @@ impl Plugin for HudPlugin {
             .add_systems(OnEnter(AppState::Game), spawn_hud)
 
             // Systems
-            .add_systems(Update,(update_parts, parts_gui).run_if(in_state(AppState::Game).and(in_state(SimulationState::Running))))
+            .add_systems(Update,(update_parts, parts_gui)
+                .run_if(in_state(AppState::Game))
+                .run_if(in_state(SimulationState::Running)))
 
             // OnExit Systems
             .add_systems(OnExit(AppState::Game), despawn_hud);
@@ -46,19 +48,17 @@ pub fn despawn_hud(mut commands: Commands, hud_query: Query<Entity, With<HUD>>) 
 
 pub fn build_hud(commands: &mut Commands) -> Entity {
     let hud_entity = commands.spawn((
-        NodeBundle{
-            style : HUD_STYLE,
-            background_color : BACKGROUND_COLOR.into(),
-            ..default()
-        },
+        get_hud_style(),
+        BackgroundColor(BACKGROUND_COLOR),
         HUD{}
     ))
     .with_children(|parent| {
         for _ in 0..8{
             parent.spawn((
-                ImageBundle{
-                    style: IMAGE_STYLE,
-                    background_color : Color::srgb(1.0, 1.0, 1.0).into(),
+                get_image_style(),
+                ImageNode{
+                    image: Handle::default(),
+                    color: Color::srgba(1.0, 1.0, 1.0, 0.0), 
                     ..default()
                 },
                 PartIcon{}
@@ -76,29 +76,36 @@ pub fn build_hud(commands: &mut Commands) -> Entity {
 
 
 //Updates
-pub fn update_parts(mut part_icon_query : Query<(&mut UiImage, &mut BackgroundColor), With<PartIcon>>, base_query : Query<&Base, With<Base>>, asset_server: Res<AssetServer>){
-    for base in base_query.iter(){
-        for (part_tier, (mut part_icon, mut part_icon_bgcolor)) in base.parts_required.iter().zip(part_icon_query.iter_mut()){
-            let part_image: Handle<Image> = match part_tier{
-                PartTier::Blue => {asset_server.load("Sprites/spaceParts_008.png")},
-                PartTier::Red => {asset_server.load("Sprites/spaceParts_013.png")},
-                PartTier::Green => {asset_server.load("Sprites/spaceParts_025.png")}
+pub fn update_parts(
+    mut part_icon_query: Query<&mut ImageNode, With<PartIcon>>,  // Remove BackgroundColor
+    base_query: Query<&Base, With<Base>>,
+    asset_server: Res<AssetServer>  
+) {
+    for base in base_query.iter() {
+        for (part_tier, mut part_icon) in base.parts_required.iter().zip(part_icon_query.iter_mut()) {
+            let part_image: Handle<Image> = match part_tier {
+                PartTier::Blue => asset_server.load("Sprites/spaceParts_008.png"),
+                PartTier::Red => asset_server.load("Sprites/spaceParts_013.png"),
+                PartTier::Green => asset_server.load("Sprites/spaceParts_025.png"),
             };
-            part_icon.texture = part_image.clone();
-            part_icon_bgcolor.0.set_a(0.3);
+            part_icon.image = part_image;  // Access the image field directly
+            part_icon.color = Color::srgba(1.0, 1.0, 1.0, 0.3);
         }
-        
-        
     }
 }
 
-pub fn parts_gui(mut part_icon_query : Query<(&mut BackgroundColor, &mut Transform), With<PartIcon>>, base_query : Query<&Base, With<Base>>){
-    for base in base_query.iter(){
-       for ((part, part_tier), (mut part_icon_bgcolor, mut part_icon_transform)) in base.parts.iter().zip(base.parts_required.iter()).zip(part_icon_query.iter_mut()){
-            if part.part_tier == *part_tier{
-                part_icon_bgcolor.0.set_a(1.0);
+pub fn parts_gui(
+    mut part_icon_query: Query<(&mut ImageNode, &mut Transform), With<PartIcon>>,
+    base_query: Query<&Base, With<Base>>
+) {
+    for base in base_query.iter() {
+        for ((part, part_tier), (mut part_icon, mut part_icon_transform)) in 
+            base.parts.iter().zip(base.parts_required.iter()).zip(part_icon_query.iter_mut()) 
+        {
+            if part.part_tier == *part_tier {
+                part_icon.color = Color::srgba(1.0, 1.0, 1.0, 1.0);
             }
-            part_icon_transform.rotation *= Quat::from_rotation_z(PI/360.0)
-       }
+            part_icon_transform.rotation *= Quat::from_rotation_z(PI / 360.0);
+        }
     }
 }

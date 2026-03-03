@@ -111,14 +111,13 @@ pub fn blaster_timer_ticker(mut blaster_timer: ResMut<BlasterCooldownTimer>, tim
 
 }
 
-pub fn spawn_player(mut commands: Commands, asset_server : Res<AssetServer>, window_query : Query<&Window, With<PrimaryWindow>>){
-    let window = window_query.single().unwrap();
+pub fn spawn_player(mut commands: Commands, asset_server : Res<AssetServer>){
     commands.spawn(
 
         PlayerBundle{
             sprite: Sprite{image:asset_server.load("Sprites/spaceShips_008.png"), ..default()},
             transform: Transform{
-                translation: Vec3::new(window.width()/2.0, window.height()/2.5, 0.0),
+                translation: Transform::from_translation(Vec3::new(0.0, 0.0, 1.0)).translation,
                 scale: Vec3::splat(0.2), // Decrease the size by half along all axes
                 ..default()},
             player: Player{health: 100, speed : 250.0, size : Vec2::new(15.0, 15.0), max_health : 100}
@@ -146,15 +145,20 @@ pub fn confine_player_movement(mut player_query: Query<&mut Transform, With<Play
         let window = window_query.single().unwrap();
 
         let half_player_size = PLAYER_SIZE/2.0;
-        let x_lim = half_player_size;
-        let x_max = window.width() - half_player_size;
-        let y_lim = half_player_size;
-        let y_max = window.height() - half_player_size;
+        let half_width = window.width() / 2.0;
+        let half_height = window.height() / 2.0;
+
+        let x_min = -half_width + half_player_size;
+        let x_max =  half_width - half_player_size;
+
+        let y_min = -half_height + half_player_size;
+        let y_max =  half_height - half_player_size;
 
         let mut translation = player_transform.translation;
-        if translation.x < x_lim{translation.x = x_lim;}
+
+        if translation.x < x_min{translation.x = x_min;}
         else if translation.x > x_max {translation.x = x_max;}
-        else if translation.y < y_lim {translation.y = y_lim;}
+        else if translation.y < y_min {translation.y = y_min;}
         else if translation.y > y_max {translation.y = y_max;}
 
         player_transform.translation = translation;
@@ -162,36 +166,55 @@ pub fn confine_player_movement(mut player_query: Query<&mut Transform, With<Play
 
 }
 
-pub fn player_shoot(mut commands: Commands, mouse_input : Res<ButtonInput<MouseButton>>, player_query: Query<(&Transform, Entity), With<Player>>, asset_server : Res<AssetServer>,  blaster_timer: ResMut<BlasterCooldownTimer>, window_query : Query<&Window, With<PrimaryWindow>>){
-    if let Ok((player_transform, player_entity)) = player_query.single(){
-        let translation = player_transform.translation;
-         if let Some(cursor_position) = window_query.single().unwrap().cursor_position(){
-            if mouse_input.pressed(MouseButton::Left) && blaster_timer.timer.just_finished(){
-                let angle = Quat::from_rotation_z((cursor_position.y - translation.y).atan2(cursor_position.x - translation.x) - PI/2.0);
-                commands.spawn(
-                    BulletBundle{
-                        bullet: Bullet{speed: BULLET_SPEED, direction : Vec2::new(cursor_position.x - translation.x, cursor_position.y-translation.y).normalize(), size : Vec2::new(10.0, 10.0), damage : 50, instant : Instant::now()},
-                        sprite: Sprite{image: asset_server.load("Sprites/spaceMissiles_027.png"), ..default()},
-                        transform: Transform{
-                            translation: Vec3::new(translation.x, translation.y, 0.0),
+
+pub fn player_shoot(
+    mut commands: Commands, mouse_input: Res<ButtonInput<MouseButton>>, player_query: Query<(&Transform, Entity), With<Player>>, asset_server: Res<AssetServer>,
+    blaster_timer: ResMut<BlasterCooldownTimer>, window_query: Query<&Window, With<PrimaryWindow>>, camera_query: Query<(&Camera, &GlobalTransform)>,
+){
+
+    let window = window_query.single().unwrap();
+    let (camera, camera_transform) = camera_query.single().unwrap();
+
+    if let Ok((player_transform, player_entity)) = player_query.single() {
+
+        if let Some(cursor_pos) = window.cursor_position() {
+
+            if let Ok(world_pos) = camera.viewport_to_world_2d(camera_transform, cursor_pos){
+                if mouse_input.pressed(MouseButton::Left)
+                    && blaster_timer.timer.just_finished()
+                {
+                    let player_pos = player_transform.translation;
+
+                    // Proper centered-world direction
+                    let direction = Vec2::new(world_pos.x - player_pos.x, world_pos.y - player_pos.y).normalize();
+
+                    let angle = Quat::from_rotation_z(direction.y.atan2(direction.x)- PI / 2.0);
+
+                    commands.spawn(
+                        BulletBundle{
+                            bullet: Bullet{speed: BULLET_SPEED, direction, size : Vec2::new(10.0, 10.0), damage : 50, instant : Instant::now()},
+                            sprite: Sprite{image: asset_server.load("Sprites/spaceMissiles_037.png"), ..default()},
+                            transform: Transform{
+                                translation: Vec3::new(player_pos.x, player_pos.y, 2.5),
+                                rotation: angle,
+                                scale: Vec3::splat(0.2),
+                                ..default()
+                            }});
+
+                    // Rotate player toward mouse
+                    commands.entity(player_entity).insert(
+                        Transform {
+                            translation: player_pos,
                             rotation: angle,
                             scale: Vec3::splat(0.2),
                             ..default()
-                        }});
-                commands.entity(player_entity).insert(
-                    Transform{
-                        translation : translation,
-                        rotation : angle,
-                        scale : Vec3::splat(0.2),
-                        ..default()
-                    });
-                    let sound_effect = asset_server.load("Audio/laserSmall_000.ogg");
-                    commands.spawn(AudioPlayer::new(sound_effect));
+                        });
+                        let sound_effect = asset_server.load("Audio/laserSmall_000.ogg");
+                        commands.spawn(AudioPlayer::new(sound_effect));
+                }
             }
         }
-         
     }
-
 }
 
 pub fn player_shoot_enemy(mut commands: Commands, mut enemy_query: Query<(Entity, &Transform, &mut Enemy)>, mut bullet_query: Query<(Entity, &Transform, &Bullet), With<Bullet>>, asset_server : Res<AssetServer>){

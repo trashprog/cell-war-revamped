@@ -3,6 +3,13 @@ use rand::prelude::*;
 
 // i did not make a create bundle function becuase the lines wont change since the params passed in is long*
 
+//ui styles
+pub const BACKGROUND_COLOR: Color = Color::srgb(0.25, 0.25, 0.25);
+pub const  NORMAL_BUTTON_COLOR : Color = Color::srgb(0.15, 0.15, 0.15);
+pub const  HOVERED_BUTTON_COLOR : Color = Color::srgb(0.25, 0.25, 0.25);
+pub const  PRESSED_BUTTON_COLOR : Color = Color::srgb(0.35, 0.75, 0.35);
+const FONT_PATH: &str = "Fonts/FiraMono-Medium.ttf";
+
 pub fn get_enemy_transform_0_2(enemy_translation : Vec3) -> Transform{
     Transform{
         translation : Vec3::new(enemy_translation.x, enemy_translation.y, 0.0),
@@ -17,9 +24,16 @@ pub fn generate_random_number() -> f32{
     random_number
 }
 
+pub fn generate_random_usize() -> usize{
+    let mut rng = rand::rng();
+    let random_number: usize = rng.random_range(0..=4);
+    random_number
+}
+
+
 pub fn collide(pos_a: Vec3, size_a: Vec2, pos_b: Vec3, size_b: Vec2,) -> Option<()> {
-    let a_radius = size_a.length_recip()*0.5;
-    let b_radius = size_b.length_recip()*0.5;
+    let a_radius = size_a.length()*0.5;
+    let b_radius = size_b.length()*0.5;
     let bounding_circle_a = BoundingCircle::new(pos_a.truncate(), a_radius);
     let bounding_circle_b = BoundingCircle::new(pos_b.truncate(), b_radius);
 
@@ -29,14 +43,6 @@ pub fn collide(pos_a: Vec3, size_a: Vec2, pos_b: Vec3, size_b: Vec2,) -> Option<
         None
     }
 }
-
-
-//ui styles
-pub const BACKGROUND_COLOR: Color = Color::srgb(0.25, 0.25, 0.25);
-pub const  NORMAL_BUTTON_COLOR : Color = Color::srgb(0.15, 0.15, 0.15);
-pub const  HOVERED_BUTTON_COLOR : Color = Color::srgb(0.25, 0.25, 0.25);
-pub const  PRESSED_BUTTON_COLOR : Color = Color::srgb(0.35, 0.75, 0.35);
-const FONT_PATH: &str = "Fonts/FiraMono-Medium.ttf";
 
 pub fn get_base_button_style() -> Node {
     let mut node = Node::default();

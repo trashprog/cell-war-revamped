@@ -9,19 +9,14 @@ impl Plugin for GameOverMenuPlugin {
     fn build(&self, app: &mut App) {
         app
             // OnEnter State Systems
-            .add_system(spawn_game_over_menu.in_schedule(OnEnter(AppState::GameOver)))
-            .add_systems(
-                (
-                    interact_with_restart_button,
-                    interact_with_main_menu_button,
-                    interact_with_quit_button,
-                    update_final_score_text,
-                    final_score_checker
+            .add_systems(OnEnter(AppState::GameOver), spawn_game_over_menu)
+            .add_systems(Update,
+                ( interact_with_restart_button, interact_with_main_menu_button, interact_with_quit_button, update_final_score_text, final_score_checker
                 )
-                .in_set(OnUpdate(AppState::GameOver)),
+                .run_if(in_state(AppState::GameOver)),
             )
             // // OnExit State Systems
-            .add_system(despawn_game_over_menu.in_schedule(OnExit(AppState::GameOver)));
+            .add_systems(OnExit(AppState::GameOver), despawn_game_over_menu);
     }
 }
 
@@ -53,130 +48,88 @@ pub fn spawn_game_over_menu(mut commands: Commands, asset_server: Res<AssetServe
 }
 
 pub fn despawn_game_over_menu(mut commands: Commands, game_over_menu_query: Query<Entity, With<GameOverMenu>>,) {
-    if let Ok(game_over_menu_entity) = game_over_menu_query.get_single() {
-        commands.entity(game_over_menu_entity).despawn_recursive();
+    if let Ok(game_over_menu_entity) = game_over_menu_query.single() {
+        commands.entity(game_over_menu_entity).despawn();
     }
 }
 
 pub fn build_game_over_menu(commands: &mut Commands, asset_server: &Res<AssetServer>) -> Entity {
     let game_over_menu_entity = commands
         .spawn((
-            NodeBundle {
-                style: GAME_OVER_MENU_STYLE,
-                z_index: ZIndex::Local(2), // See Ref. 1
-                ..default()
-            },
+            get_game_over_menu_style(),
             GameOverMenu {},
         ))
         .with_children(|parent| {
             parent
-                .spawn(NodeBundle {
-                    style: GAME_OVER_MENU_CONTAINER_STYLE,
-                    background_color: BACKGROUND_COLOR.into(),
-                    ..default()
-                })
+                .spawn(
+                    get_base_button_style()
+            )
                 .with_children(|parent| {
                     // Title
-                    parent.spawn((
-                        TextBundle {
-                            text: Text {
-                                sections: vec![TextSection::new(
-                                    "Game Over",
-                                    get_title_text_style(asset_server)
-                                )],
-                                alignment: TextAlignment::Center,
-                                ..default()
-                            },
-                            ..default()
-                        },
-                        CommentText{}
+                    let text_components = get_title_text_components(asset_server, "Game Over");
+                    parent.spawn(
+                        (
+                        text_components.0,
+                        text_components.1,
+                        text_components.2,
                     ));
                     // Final Score Text
+                    let text_components = get_title_text_components(asset_server, "Your Final Score:");
                     parent.spawn((
-                        TextBundle {
-                            text: Text {
-                                sections: vec![TextSection::new(
-                                    "Your final score was:",
-                                    get_final_score_text_style(asset_server)
-                                )],
-                                alignment: TextAlignment::Center,
-                                ..default()
-                            },
-                            ..default()
-                        },
+                        (
+                        text_components.0,
+                        text_components.1,
+                        text_components.2,
+                        ),
                         FinalScoreText {}
                     ));
                     // Restart Button
                     parent
                         .spawn((
-                            ButtonBundle {
-                                style: BUTTON_STYLE,
-                                background_color: NORMAL_BUTTON_COLOR.into(),
-                                ..default()
-                            },
+                            build_button(),
                             RestartButton {},
                         ))
                         .with_children(|parent| {
-                            parent.spawn(TextBundle {
-                                style: Style { ..default() },
-                                text: Text {
-                                    sections: vec![TextSection::new(
-                                        "Restart",
-                                        get_button_text_style(asset_server),
-                                    )],
-                                    alignment: TextAlignment::Center,
-                                    ..default()
-                                },
-                                ..default()
-                            });
+                           let text_components = get_button_text_components(asset_server, "Restart", 32.0);
+                            parent.spawn(
+                                (
+                                text_components.0,
+                                text_components.1,
+                                text_components.2,
+                                )
+                            );
                         });
                     // Main Menu Button
                     parent
                         .spawn((
-                            ButtonBundle {
-                                style: BUTTON_STYLE,
-                                background_color: NORMAL_BUTTON_COLOR.into(),
-                                ..default()
-                            },
+                            build_button(),
                             MainMenuButton {},
                         ))
                         .with_children(|parent| {
-                            parent.spawn(TextBundle {
-                                style: Style { ..default() },
-                                text: Text {
-                                    sections: vec![TextSection::new(
-                                        "Main Menu",
-                                        get_button_text_style(asset_server),
-                                    )],
-                                    alignment: TextAlignment::Center,
-                                    ..default()
-                                },
-                                ..default()
-                            });
+                           let text_components = get_button_text_components(asset_server, "Main Menu", 32.0);
+                            parent.spawn(
+                                (
+                                text_components.0,
+                                text_components.1,
+                                text_components.2,
+                                )
+                            );
                         });
                     // Quit Button
                     parent
                         .spawn((
-                            ButtonBundle {
-                                style: BUTTON_STYLE,
-                                background_color: NORMAL_BUTTON_COLOR.into(),
-                                ..default()
-                            },
+                            build_button(),
                             QuitButton {},
                         ))
                         .with_children(|parent| {
-                            parent.spawn(TextBundle {
-                                style: Style { ..default() },
-                                text: Text {
-                                    sections: vec![TextSection::new(
-                                        "Quit",
-                                        get_button_text_style(asset_server),
-                                    )],
-                                    alignment: TextAlignment::Center,
-                                    ..default()
-                                },
-                                ..default()
-                            });
+                            let text_components = get_button_text_components(asset_server, "Quit", 32.0);
+                            parent.spawn(
+                                (
+                                text_components.0,
+                                text_components.1,
+                                text_components.2,
+                                )
+                            );
                         });
                 });
         })
@@ -197,7 +150,7 @@ pub fn interact_with_restart_button(
 ) {
     for (interaction, mut color) in button_query.iter_mut() {
         match *interaction {
-            Interaction::Clicked => {
+            Interaction::Pressed => {
                 *color = PRESSED_BUTTON_COLOR.into();
                 app_state_next_state.set(AppState::Game);
             }
@@ -220,7 +173,7 @@ pub fn interact_with_main_menu_button(
 ) {
     for (interaction, mut color) in button_query.iter_mut() {
         match *interaction {
-            Interaction::Clicked => {
+            Interaction::Pressed => {
                 *color = PRESSED_BUTTON_COLOR.into();
                 app_state_next_state.set(AppState::MainMenu);
             }
@@ -243,9 +196,9 @@ pub fn interact_with_quit_button(
 ) {
     for (interaction, mut color) in button_query.iter_mut() {
         match *interaction {
-            Interaction::Clicked => {
+            Interaction::Pressed => {
                 *color = PRESSED_BUTTON_COLOR.into();
-                app_exit_event_writer.send(AppExit);
+                app_exit_event_writer.write(AppExit::Success);
             }
             Interaction::Hovered => {
                 *color = HOVERED_BUTTON_COLOR.into();
@@ -264,7 +217,7 @@ pub fn update_final_score_text(final_score : Res<FinalScore>, mut text_query: Qu
     let time_alive = final_score.scores.last().unwrap().1;
     let base_level = final_score.scores.last().unwrap().0;
     for mut text in text_query.iter_mut(){
-        text.sections[0].value = format!("Time alive: {}\nBase level: {}", time_alive, base_level);
+        text.0 = format!("Time alive: {}\nBase level: {}", time_alive, base_level);
     }
 }
 
@@ -277,7 +230,7 @@ pub fn final_score_checker(final_score : Res<FinalScore>, mut text_query: Query<
             time_survived if time_survived < 600 => "Fantastic score",
             _ => "You are awesome" 
         };
-        text.sections[0].value = format!("{}", result)
+        text.0 = format!("{}", result)
 
     }
     
