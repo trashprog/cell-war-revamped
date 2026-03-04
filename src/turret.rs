@@ -33,10 +33,6 @@ pub struct Turret{
 
 #[derive(Component)]
 
-pub struct TurretMissile{
-    pub target : Option<Entity>
-}
-
 #[derive(Resource)]
 pub struct TurretCooldownTimer{
     pub timer: Timer,
@@ -75,7 +71,7 @@ pub fn turret_movement(mut commands: Commands, enemy_query: Query<(Entity, &Tran
                                 ..default()
                             }});
                         let sound_effect = asset_server.load("Audio/impactGlass_heavy_001.ogg");
-                        commands.spawn(AudioPlayer::new(sound_effect));
+                        commands.spawn((AudioPlayer::new(sound_effect), PlaybackSettings::DESPAWN));
                         turret_transform.rotation = Quat::from_rotation_z((enemy_transform.translation.y - turret_transform.translation.y).atan2(enemy_transform.translation.x - turret_transform.translation.x) - PI/2.0);
                         fired = true;
                     }

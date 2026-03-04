@@ -81,12 +81,18 @@ pub fn update_parts(
     base_query: Query<&Base, With<Base>>,
     asset_server: Res<AssetServer>  
 ) {
+
+    // load the assets once
+    let blue = asset_server.load("Sprites/spaceParts_008.png");
+    let red = asset_server.load("Sprites/spaceParts_013.png");
+    let green = asset_server.load("Sprites/spaceParts_025.png");
+
     for base in base_query.iter() {
         for (part_tier, mut part_icon) in base.parts_required.iter().zip(part_icon_query.iter_mut()) {
             let part_image: Handle<Image> = match part_tier {
-                PartTier::Blue => asset_server.load("Sprites/spaceParts_008.png"),
-                PartTier::Red => asset_server.load("Sprites/spaceParts_013.png"),
-                PartTier::Green => asset_server.load("Sprites/spaceParts_025.png"),
+                PartTier::Blue => blue.clone(),
+                PartTier::Red => red.clone(),
+                PartTier::Green => green.clone(),
             };
             part_icon.image = part_image;  // Access the image field directly
             part_icon.color = Color::srgba(1.0, 1.0, 1.0, 0.3);

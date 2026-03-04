@@ -61,28 +61,14 @@ pub fn build_game_over_menu(commands: &mut Commands, asset_server: &Res<AssetSer
         ))
         .with_children(|parent| {
             parent
-                .spawn(
-                    get_base_button_style()
-            )
+                .spawn(get_game_over_menu_container_style())
                 .with_children(|parent| {
                     // Title
                     let text_components = get_title_text_components(asset_server, "Game Over");
-                    parent.spawn(
-                        (
-                        text_components.0,
-                        text_components.1,
-                        text_components.2,
-                    ));
+                    parent.spawn(( text_components.0, text_components.1, text_components.2,));
                     // Final Score Text
-                    let text_components = get_title_text_components(asset_server, "Your Final Score:");
-                    parent.spawn((
-                        (
-                        text_components.0,
-                        text_components.1,
-                        text_components.2,
-                        ),
-                        FinalScoreText {}
-                    ));
+                    let text_components = get_final_score_text_components(asset_server, "Your Final Score:");
+                    parent.spawn(((text_components.0,text_components.1,text_components.2,), FinalScoreText {}));
                     // Restart Button
                     parent
                         .spawn((
@@ -91,13 +77,7 @@ pub fn build_game_over_menu(commands: &mut Commands, asset_server: &Res<AssetSer
                         ))
                         .with_children(|parent| {
                            let text_components = get_button_text_components(asset_server, "Restart", 32.0);
-                            parent.spawn(
-                                (
-                                text_components.0,
-                                text_components.1,
-                                text_components.2,
-                                )
-                            );
+                            parent.spawn((text_components.0,text_components.1,text_components.2,));
                         });
                     // Main Menu Button
                     parent

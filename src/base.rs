@@ -1,6 +1,6 @@
 use std::f32::consts::PI;
 use std::time::Instant;
-use bevy::{ prelude::*, window::PrimaryWindow};
+use bevy::{ prelude::*};
 
 use crate::player::*;
 use crate::turret::*;
@@ -231,22 +231,22 @@ pub fn base_leveling(mut base_query: Query<&mut Base, (With<Base>, Without<Playe
         }
     }
     for mut base in base_query.iter_mut(){
-        if base.parts.len() == base.parts_required.len() && !base.parts_required.is_empty(){
+        if base.parts.is_empty() || base.parts_required.is_empty(){
+            continue;
+        }
+        
+        if base.parts.len() == base.parts_required.len(){
             let all_match = base.parts.iter()
                 .zip(base.parts_required.iter())
                 .all(|(part, tier)| part.part_tier == *tier);
             
+            base.parts.clear();
+            base.parts_required.clear();
+            
             if all_match {
-                base.parts.clear();
-                base.parts_required.clear();
-                if base.max_parts < 8 {
-                    base.max_parts += 1;
-                }
+                if base.max_parts < 8 { base.max_parts += 1; }
                 base.level += 1;
                 base.leveled_up = true;
-            } else {
-                // Only clear collected parts, not the requirements
-                base.parts.clear();
             }
         }
     }
@@ -268,8 +268,8 @@ pub fn base_levels(mut commands: Commands, mut base_query: Query<(&Transform, &m
                         },
                         base_type: BaseBuilding{}
                     });
-                        let sound_effect = asset_server.load("Audio/computerNoise_000.ogg");
-                        commands.spawn(AudioPlayer::new(sound_effect));
+                        let sound_effect = asset_server.load("Audio/confirmation_001.ogg");
+                        commands.spawn((AudioPlayer::new(sound_effect), PlaybackSettings::DESPAWN));
                         blaster_timer.set_cooldown(0.4);
                         player.speed = 300.0;
                         player.max_health = 150;
@@ -292,8 +292,8 @@ pub fn base_levels(mut commands: Commands, mut base_query: Query<(&Transform, &m
                             },
                             base_type: BaseBuilding{}
                         });
-                        let sound_effect = asset_server.load("Audio/computerNoise_001.ogg");
-                        commands.spawn(AudioPlayer::new(sound_effect));
+                        let sound_effect = asset_server.load("Audio/confirmation_002.ogg");
+                        commands.spawn((AudioPlayer::new(sound_effect), PlaybackSettings::DESPAWN));
                         blaster_timer.set_cooldown(0.3);
                         player.speed = 350.0;
                         player.max_health = 200;
@@ -315,8 +315,8 @@ pub fn base_levels(mut commands: Commands, mut base_query: Query<(&Transform, &m
                             },
                             base_type: BaseBuilding{}
                         });
-                        let sound_effect = asset_server.load("Audio/computerNoise_001.ogg");
-                        commands.spawn(AudioPlayer::new(sound_effect));
+                        let sound_effect = asset_server.load("Audio/confirmation_003.ogg");
+                        commands.spawn((AudioPlayer::new(sound_effect), PlaybackSettings::DESPAWN));
                         blaster_timer.set_cooldown(0.2);
                         player.speed = 400.0;
                         player.max_health = 250;
@@ -339,8 +339,8 @@ pub fn base_levels(mut commands: Commands, mut base_query: Query<(&Transform, &m
                         },
                         base_type: Turret{target : None}
                     });
-                    let sound_effect = asset_server.load("Audio/computerNoise_002.ogg");
-                    commands.spawn(AudioPlayer::new(sound_effect));
+                    let sound_effect = asset_server.load("Audio/confirmation_004.ogg");
+                    commands.spawn((AudioPlayer::new(sound_effect), PlaybackSettings::DESPAWN));
                     blaster_timer.set_cooldown(0.1);
                     player.speed = 450.0;
                     player.max_health = 300;
@@ -373,8 +373,8 @@ pub fn base_levels(mut commands: Commands, mut base_query: Query<(&Transform, &m
                             },
                             base_type: BaseBuilding{}
                         });
-                        let sound_effect = asset_server.load("Audio/computerNoise_003.ogg");
-                        commands.spawn(AudioPlayer::new(sound_effect));
+                        let sound_effect = asset_server.load("Audio/confirmation_004.ogg");
+                        commands.spawn((AudioPlayer::new(sound_effect), PlaybackSettings::DESPAWN));
                         player.speed = 500.0;
                         player.max_health = 300;
                         player.health = 300;
@@ -395,8 +395,14 @@ pub fn cheat_leveling(mut base_query: Query<&mut Base, With<Base>>, keyboard_inp
         if keyboard_input.just_pressed(KeyCode::Tab){
             base.level += 1;
             base.leveled_up = true;
-            println!("{}", base.level);
-            println!("{}", base.parts_required.len());
+
+            if base.max_parts < 8 {
+                base.max_parts += 1;
+            }
+            // Clear both so base_leveling regenerates requirements for new level
+            base.parts.clear();
+            base.parts_required.clear();
+            println!("Base level: {}", base.level);
         }
     }
 }
@@ -407,13 +413,16 @@ pub fn enemy_hit_base(mut commands: Commands, enemy_query: Query<(Entity, &Trans
         for (enemy_entity, enemy_transform, enemy) in enemy_query.iter() {
             if collide(base_transform.translation, base.size, enemy_transform.translation, enemy.size).is_some(){
                 let sound_effect = asset_server.load("Audio/footstep_snow_002.ogg");
-                commands.spawn(AudioPlayer::new(sound_effect));
+                commands.spawn((AudioPlayer::new(sound_effect), PlaybackSettings::DESPAWN));
                 commands.entity(enemy_entity).despawn();
                 base.health -= enemy.health;
+                println!("base health: {}", base.health);
                 if base.health <= 0 {
                     let sound_effect = asset_server.load("Audio/explosionCrunch_002.ogg");
-                    commands.spawn(AudioPlayer::new(sound_effect));
+                    commands.spawn((AudioPlayer::new(sound_effect), PlaybackSettings::DESPAWN));
+                    println!("game over, sending event...");
                     game_over_event_writer.write(GameOver{time_alive : base.instant.elapsed().as_secs(), base_level : base.level});
+                    return;
                 }
             }
         }

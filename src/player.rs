@@ -210,7 +210,7 @@ pub fn player_shoot(
                             ..default()
                         });
                         let sound_effect = asset_server.load("Audio/laserSmall_000.ogg");
-                        commands.spawn(AudioPlayer::new(sound_effect));
+                        commands.spawn((AudioPlayer::new(sound_effect), PlaybackSettings::DESPAWN));
                 }
             }
         }
@@ -239,8 +239,8 @@ pub fn player_shoot_enemy(mut commands: Commands, mut enemy_query: Query<(Entity
                                         part: Part{part_tier : PartTier::Blue, size : Vec2::new(15.0, 15.0), instant : Instant::now()}
                                     });
                             }
-                            commands.entity(enemy_entity).despawn();
-                            commands.spawn(AudioPlayer::new(sound_effect));
+                            commands.entity(enemy_entity).try_despawn();
+                            commands.spawn((AudioPlayer::new(sound_effect), PlaybackSettings::DESPAWN));
                         },
                         EnemyType::Stinger =>{
                             let reward_chance = generate_random_number();
@@ -249,11 +249,11 @@ pub fn player_shoot_enemy(mut commands: Commands, mut enemy_query: Query<(Entity
                                     PartBundle{
                                         sprite: Sprite{image:asset_server.load("Sprites/spaceParts_013.png"), ..default()},
                                         transform: get_enemy_transform_0_2(enemy_transform.translation),
-                                        part: Part{part_tier : PartTier::Blue, size : Vec2::new(15.0, 15.0), instant : Instant::now()}
+                                        part: Part{part_tier : PartTier::Red, size : Vec2::new(15.0, 15.0), instant : Instant::now()}
                                     });
                             }
-                            commands.entity(enemy_entity).despawn();
-                            commands.spawn(AudioPlayer::new(sound_effect));
+                            commands.entity(enemy_entity).try_despawn();
+                            commands.spawn((AudioPlayer::new(sound_effect), PlaybackSettings::DESPAWN));
                         },
                         EnemyType::Rogue => {
                             let reward_chance = generate_random_number();
@@ -276,8 +276,8 @@ pub fn player_shoot_enemy(mut commands: Commands, mut enemy_query: Query<(Entity
                                     });
                                 }
                             }
-                            commands.entity(enemy_entity).despawn();
-                            commands.spawn(AudioPlayer::new(sound_effect));
+                            commands.entity(enemy_entity).try_despawn();
+                            commands.spawn((AudioPlayer::new(sound_effect), PlaybackSettings::DESPAWN));
                         },
                         EnemyType::Splitter{split_count : count, instant : _, direction: _} => {
                             if count == 0{
@@ -293,8 +293,8 @@ pub fn player_shoot_enemy(mut commands: Commands, mut enemy_query: Query<(Entity
                                             enemy: Enemy{health : 150, variant: EnemyType::Splitter { split_count: 1, instant: Instant::now(), direction : Vec3::new(rand::rng().random_range(-0.1..=0.1), rand::rng().random_range(-0.1..=0.1), 0.0)}, speed : 20.0, size : Vec2::new(10.0, 10.0)}
                                         });
                                 }     
-                                commands.entity(enemy_entity).despawn();
-                                commands.spawn(AudioPlayer::new(sound_effect_two));
+                                commands.entity(enemy_entity).try_despawn();
+                                commands.spawn((AudioPlayer::new(sound_effect_two), PlaybackSettings::DESPAWN));
                             }
                             else if count == 1{
                                 for _ in 0..2{
@@ -329,12 +329,12 @@ pub fn player_shoot_enemy(mut commands: Commands, mut enemy_query: Query<(Entity
                                         part: Part{part_tier : PartTier::Blue, size : Vec2::new(15.0, 15.0), instant : Instant::now()}
                                     });
                                     }
-                                commands.entity(enemy_entity).despawn();
-                                commands.spawn(AudioPlayer::new(sound_effect_two));
+                                commands.entity(enemy_entity).try_despawn();
+                                commands.spawn((AudioPlayer::new(sound_effect_two), PlaybackSettings::DESPAWN));
                             }
                             else {
-                                commands.entity(enemy_entity).despawn();
-                                commands.spawn(AudioPlayer::new(sound_effect));
+                                commands.entity(enemy_entity).try_despawn();
+                                commands.spawn((AudioPlayer::new(sound_effect), PlaybackSettings::DESPAWN));
                             }
                         },
 
@@ -367,8 +367,8 @@ pub fn player_shoot_enemy(mut commands: Commands, mut enemy_query: Query<(Entity
                                 });   
                                 }
                             }
-                            commands.entity(enemy_entity).despawn();
-                            commands.spawn(AudioPlayer::new(sound_effect));
+                            commands.entity(enemy_entity).try_despawn();
+                            commands.spawn((AudioPlayer::new(sound_effect), PlaybackSettings::DESPAWN));
                         },
                         EnemyType::Propagator => {
                             let reward_tier_chance = generate_random_number();
@@ -396,13 +396,13 @@ pub fn player_shoot_enemy(mut commands: Commands, mut enemy_query: Query<(Entity
                                 part: Part{part_tier : PartTier::Blue, size : Vec2::new(15.0, 15.0), instant : Instant::now()}
                             });      
                             }
-                            commands.entity(enemy_entity).despawn();
-                            commands.spawn(AudioPlayer::new(sound_effect));
+                            commands.entity(enemy_entity).try_despawn();
+                            commands.spawn((AudioPlayer::new(sound_effect), PlaybackSettings::DESPAWN));
                         },
 
                         _ => {
-                            commands.entity(enemy_entity).despawn();
-                            commands.spawn(AudioPlayer::new(sound_effect));
+                            commands.entity(enemy_entity).try_despawn();
+                            commands.spawn((AudioPlayer::new(sound_effect), PlaybackSettings::DESPAWN));
                         }
                         
                     }
@@ -425,13 +425,13 @@ pub fn base_part_collecting(mut commands: Commands, mut base_query: Query<&mut B
             if collide(player_transform.translation, player.size, part_transform.translation, part.size).is_some(){
                 match part.part_tier{
                     PartTier::Blue => {
-                        commands.spawn(AudioPlayer::new(asset_server.load("Audio/impactMining_002.ogg")));
+                        commands.spawn((AudioPlayer::new(asset_server.load("Audio/impactMining_002.ogg")), PlaybackSettings::DESPAWN));
                     },
                     PartTier::Red => {
-                        commands.spawn(AudioPlayer::new(asset_server.load("Audio/impactMining_003.ogg")));
+                        commands.spawn((AudioPlayer::new(asset_server.load("Audio/impactMining_003.ogg")), PlaybackSettings::DESPAWN));
                     }
                     PartTier::Green => {
-                        commands.spawn(AudioPlayer::new(asset_server.load("Audio/impactMining_001.ogg")));
+                        commands.spawn((AudioPlayer::new(asset_server.load("Audio/impactMining_001.ogg")), PlaybackSettings::DESPAWN));
                     }
                 }
                 for mut base in base_query.iter_mut(){
@@ -440,10 +440,10 @@ pub fn base_part_collecting(mut commands: Commands, mut base_query: Query<&mut B
                     println!("{:?}", base.parts);
                     println!("{:?}", base.level);
                 }
-                commands.entity(part_entity).despawn();
+                commands.entity(part_entity).try_despawn();
             }
             if part.instant.elapsed().as_secs() > 10{
-                commands.entity(part_entity).despawn();
+                commands.entity(part_entity).try_despawn();
             }
             part_transform.rotation *= Quat::from_rotation_z(-PI/360.0);
         }
@@ -458,14 +458,14 @@ pub fn enemy_hit_player(mut commands: Commands, enemy_query: Query<(Entity, &Ene
                 player.health -= enemy.health;
                 if player.health <= 0{
                     //let sound_effect_player = asset_server.load("Audio/explosionCrunch_003.ogg");
-                    commands.spawn(AudioPlayer::new(asset_server.load("Audio/explosionCrunch_003.ogg")));
+                    commands.spawn((AudioPlayer::new(asset_server.load("Audio/explosionCrunch_003.ogg")), PlaybackSettings::DESPAWN));
                     for base_transform in base_query.iter(){
                         player_transform.translation = base_transform.translation;
                         player.health = player.max_health;
                     }
                 }
-                commands.entity(enemy_entity).despawn();
-                commands.spawn(AudioPlayer::new(asset_server.load("Audio/explosionCrunch_002.ogg")));
+                commands.entity(enemy_entity).try_despawn();
+                commands.spawn((AudioPlayer::new(asset_server.load("Audio/explosionCrunch_002.ogg")), PlaybackSettings::DESPAWN));
                 
                 
            }

@@ -46,7 +46,7 @@ pub fn update_bullets(mut commands: Commands, mut bullet_query: Query<(&mut Tran
         transform.translation += direction*bullet.speed*time.delta_secs();
         transform.rotation = Quat::from_rotation_z(bullet.direction.y.atan2(bullet.direction.x) - PI/2.0);
         if bullet.instant.elapsed().as_secs() > BULLET_LIFETIME as u64{
-            commands.entity(entity).despawn();
+            commands.entity(entity).try_despawn();
             
         }
         let half_bullet_size = BULLET_SIZE/2.0;
@@ -105,6 +105,6 @@ pub fn update_bullets(mut commands: Commands, mut bullet_query: Query<(&mut Tran
 
 pub fn despawn_bullets(mut commands: Commands, bullet_query : Query<Entity, With<Bullet>>){
     for i in bullet_query.iter(){
-        commands.entity(i).despawn()
+        commands.entity(i).try_despawn()
     }
 }

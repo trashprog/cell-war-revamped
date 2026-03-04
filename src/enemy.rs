@@ -247,7 +247,7 @@ pub fn deacon_behaviour(mut commands: Commands, mut deacon_query : Query<(Entity
                         deacon.direction = Vec3::new(enemy_transform.translation.x - deacon_transform.translation.x, enemy_transform.translation.y - deacon_transform.translation.y, 0.0);
                     if collide(enemy_transform.translation, enemy.size, deacon_transform.translation, deacon.size).is_some(){
                         let sound_effect = asset_server.load("Audio/doorClose_000.ogg");
-                        commands.spawn(AudioPlayer::new(sound_effect));
+                        commands.spawn((AudioPlayer::new(sound_effect), PlaybackSettings::DESPAWN));
                         commands.entity(deacon_entity).despawn();
                         enemy.health += 10;
                         enemy.speed += 1.0;
@@ -262,7 +262,7 @@ pub fn deacon_behaviour(mut commands: Commands, mut deacon_query : Query<(Entity
         for (bullet_entity, bullet_transform, bullet) in bullet_query.iter(){
             if collide(bullet_transform.translation, bullet.size, deacon_transform.translation, deacon.size).is_some(){
                 let sound_effect = asset_server.load("Audio/doorOpen_001.ogg");
-                commands.spawn(AudioPlayer::new(sound_effect));
+                commands.spawn((AudioPlayer::new(sound_effect), PlaybackSettings::DESPAWN));
                 commands.entity(bullet_entity).despawn();
                 commands.entity(deacon_entity).despawn();
             }

@@ -1,5 +1,5 @@
 use bevy::{prelude::*, app::AppExit};
-use crate::{SimulationState, repetitive_code::*};
+use crate::{repetitive_code::*};
 use super::AppState;
 
 pub struct MainMenuPlugin;
@@ -7,9 +7,9 @@ pub struct MainMenuPlugin;
 impl Plugin for MainMenuPlugin{
     fn build(&self, app: &mut App) {
         app
-        .add_systems(OnEnter(AppState::MainMenu), spawn_main_menu)
+        .add_systems(OnEnter(AppState::MainMenu), (spawn_main_menu, play_main_menu_music))
         .add_systems(Update, (interact_with_play_button, interact_with_quit_button).run_if(in_state(AppState::MainMenu)))
-        .add_systems(OnExit(AppState::MainMenu), despawn_main_menu);
+        .add_systems(OnExit(AppState::MainMenu), (despawn_main_menu, despawn_main_menu_music));
     }
 }
 
@@ -25,11 +25,24 @@ pub struct PlayButton;
 #[derive(Component)]
 pub struct QuitButton;
 
+#[derive(Component)]
+pub struct MainMenuMusic;
 
 //Layout
 
 pub fn spawn_main_menu(mut commands : Commands, asset_server: Res<AssetServer>) {
     build_main_menu(&mut commands, &asset_server);
+}
+
+pub fn play_main_menu_music(mut commands : Commands,asset_server: Res<AssetServer>){
+    let music = asset_server.load("Audio/main_menu_music.mp3");
+    commands.spawn((AudioPlayer::new(music), PlaybackSettings::LOOP, MainMenuMusic{}));
+}
+
+pub fn despawn_main_menu_music(mut commands: Commands, music_query: Query<Entity, With<MainMenuMusic>>) {
+    for entity in music_query.iter() {
+        commands.entity(entity).try_despawn();
+    }
 }
 
 pub fn despawn_main_menu(mut commands : Commands, main_menu_query: Query<Entity, With<MainMenu>>) {

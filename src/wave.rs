@@ -85,11 +85,13 @@ pub fn wave_spawner(mut commands: Commands, asset_server : Res<AssetServer>, mut
         }
         for _ in 0..= wave_timer.enemy_count{
             let rand_side = generate_random_usize() % 4; // Randomly select one of the four sides
+            let half_width = window.width() / 2.0;
+            let half_height = window.height() / 2.0;
             let (rand_x, rand_y) = match rand_side {
-                0 => (generate_random_number() * window.width(), -20.0), // Top edge
-                1 => (generate_random_number() * window.width(), window.height() + 20.0), // Bottom edge
-                2 => (-20.0, generate_random_number() * window.height()), // Left edge
-                _ => (window.width() + 20.0, generate_random_number() * window.height()), // Right edge
+                0 => ((generate_random_number() * window.width()) - half_width, -half_height - 20.0), // Bottom edge
+                1 => ((generate_random_number() * window.width()) - half_width,  half_height + 20.0), // Top edge
+                2 => (-half_width - 20.0, (generate_random_number() * window.height()) - half_height), // Left edge
+                _ => ( half_width + 20.0, (generate_random_number() * window.height()) - half_height), // Right edge
             };
             let rand_num : f64 = generate_random_number() as f64;
             let mut cum_prob : f64 = 0.0;

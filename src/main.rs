@@ -61,8 +61,7 @@ fn main() {
         transition_to_game_state, 
         transition_to_main_menu_state,
         update_final_score,
-        toggle_simulation.run_if(in_state(AppState::Game)),
-        handle_game_over.run_if(in_state(AppState::GameOver))
+        (toggle_simulation, handle_game_over).run_if(in_state(AppState::Game))
     ))
 
     //On Exit Systems
@@ -161,7 +160,7 @@ pub fn toggle_simulation(
     }
 }
 
-pub fn handle_game_over(mut game_over_event_reader : EventMutator<GameOver>, mut next_app_state : ResMut<NextState<AppState>>,){
+pub fn handle_game_over(mut game_over_event_reader : EventReader<GameOver>, mut next_app_state : ResMut<NextState<AppState>>,){
     for i in game_over_event_reader.read(){
         println!("Time alive: {} seconds | base level : {}", i.time_alive, i.base_level);
         next_app_state.set(AppState::GameOver);
