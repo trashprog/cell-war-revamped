@@ -263,8 +263,8 @@ pub fn deacon_behaviour(mut commands: Commands, mut deacon_query : Query<(Entity
             if collide(bullet_transform.translation, bullet.size, deacon_transform.translation, deacon.size).is_some(){
                 let sound_effect = asset_server.load("Audio/doorOpen_001.ogg");
                 commands.spawn((AudioPlayer::new(sound_effect), PlaybackSettings::DESPAWN));
-                commands.entity(bullet_entity).despawn();
-                commands.entity(deacon_entity).despawn();
+                commands.entity(bullet_entity).try_despawn();
+                commands.entity(deacon_entity).try_despawn();
             }
         }
     }
